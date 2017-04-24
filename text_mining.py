@@ -1,12 +1,4 @@
-'''
-Goes through the first 10 Federalist Papers. Runs sentiment analysis and finds
-the mean positive, negative, and neutral score for each author (Hamilton, Jay,
-and Madison). Finds the most used words in each paper and sorts them from most used
-to least used. Only displays words that were used at least 20 times.
-
-NAME: Ana Krishnan
-'''
-
+import requests
 import nltk
 import operator
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -24,7 +16,6 @@ def fed_paper_creator():
     input_file = open("fedpapers.txt", "r")
     lines = input_file.readlines()
 
-    # The indices seperate the input file of all 10 Federalist Papers into individual Federalist Papers
     paper1 = str.lower(' '.join(lines[32:194]))
     paper2 = str.lower(' '.join(lines[196:370]))
     paper3 = str.lower(' '.join(lines[372:535]))
@@ -51,40 +42,54 @@ def paper_split(paper):
     '''
     tokenpaper = open(paper).read()
     words = nltk.word_tokenize(tokenpaper)
+    '''common_words = ['the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'do']
+    common_words2 = ['at', 'this', 'but', 'by', 'from']'''
     for word in words:
-        if word in ['.', ';', ':', ',', '-', '!', '"', '?', '(', ')', "'", '[', ']', "'\\n", '--']:
+        if word == '.' or word == ';' or word == ':' or word == ',' or word == '-' or word == '!' or word == '"' or word == '?' or word == '(' or word == ')':
             words.remove(word)
+        if word == "'" or word == '[' or word == ']' or word == "'\\n" or word == '--':
+            words.remove(word)
+        '''if word in common_words or word in common_words2:
+            words.remove(word)
+        if word == 'the' or word == 'a':
+            words.remove(word)'''
     return words
+    print(words)
 
 
 def new_paper(papers):
     '''
     This function writes the new tokenized words into the old text file.
-    It also counts the frequency of the words for each paper, and displays the words
-    from most to least used if they were used more than 20 times.
     '''
     fed_paper_creator()
-    d = dict()
-    x = 0
-    numbers = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten']
     for paper in papers:
         words = paper_split(paper)
         wordstr = str(words)
         file = open(paper, 'w')
         file.write(wordstr)
         file.close()
-        for word in words:
-            frequency = d.get(word, 0)
-            d[word] = frequency + 1
-            clean_freq = {key:value for key, value in d.items() if value > 20}
-            freq_sort = sorted(clean_freq.items(), reverse=True, key=operator.itemgetter(1))
-        number = numbers[x]
-        text = 'Here are the words in Federalist Paper {number} sorted from most to least used.'
-        print(text.format(number=number))
-        print('The displayed words were used at least 20 times.')
-        print(freq_sort)
-        print(' ')
-        x = x + 1
+        return words
+
+
+def word_frequency(papers):
+    '''
+    This function counts the frequency of the words in the Federalist papers
+    '''
+    words = new_paper(papers)
+    d = dict()
+    for word in words:
+        frequency = d.get(word, 0)
+        d[word] = frequency + 1
+    return d
+
+
+def sort_frequencies(papers):
+    '''
+    This function sorts the frequencies in decreasing order.
+    '''
+    d = word_frequency(papers)
+    freq_sort = sorted(d.items(), reverse=True, key=operator.itemgetter(1))
+    return freq_sort
 
 
 def sentiment():
@@ -108,23 +113,19 @@ def sentiment():
     sent9 = analyzer.polarity_scores(str(' '.join(lines[1553:1762])))
     sent10 = analyzer.polarity_scores(str(' '.join(lines[1764:2064])))
 
-    # Hamilton
+    '''Hamilton'''
     sumHam = dict(Counter(sent1) + Counter(sent6) + Counter(sent7) + Counter(sent8) + Counter(sent9))
     meanHam = {k: sumHam[k] / float((k in sent1) + (k in sent6) + (k in sent7) + (k in sent8) + (k in sent9)) for k in sumHam}
     print('Alexander Hamilton wrote Federalist Papers 1 and 6-9. This the average sentiment of those papers: ', meanHam)
-    print(' ')
-
-    # Jay
+    '''Jay'''
     sumJay = dict(Counter(sent2) + Counter(sent3) + Counter(sent4) + Counter(sent5))
     meanJay = {k: sumJay[k] / float((k in sent2) + (k in sent3) + (k in sent4) + (k in sent5)) for k in sumJay}
     print('John Jay wrote Federalist Papers 2-5. This the average sentiment of Papers 2-5: ', meanJay)
-    print(' ')
-
-    # Madison
+    '''Madison'''
     print('James Madison wrote Federalist Paper 10. This the average sentiment of Paper 10: ', sent10)
-    print(' ')
 
 
-if __name__ == "__main__":
-    new_paper(papers)
-    sentiment()
+print(sort_frequencies(papers))
+
+
+print(sentiment())
